@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ganze Zahlen – interaktive Übungen</title>
+<style>
+:root{
+  --bg:#f4f7fb;
+  --card:#fff;
+  --text:#1f2937;
+  --muted:#64748b;
+  --accent:#2563eb;
+  --accent2:#0f766e;
+  --good:#15803d;
+  --bad:#b91c1c;
+  --border:#dbe3ef;
+  --soft:#eef4ff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+main{max-width:1100px;margin:0 auto;padding:24px}
+h1{text-align:center;margin:0 0 8px;font-size:clamp(2rem,4vw,3.3rem)}
+.subtitle{text-align:center;color:var(--muted);margin-bottom:22px;font-size:1.05rem}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.tab{
+  border:2px solid var(--border);
+  background:var(--card);
+  padding:14px 10px;
+  border-radius:14px;
+  font-weight:700;
+  font-size:1rem;
+  cursor:pointer;
+}
+.tab.active{border-color:var(--accent);background:var(--soft);color:var(--accent)}
+.panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 8px 30px rgba(15,23,42,.06);
+}
+.topline{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}
+.score{font-weight:700;color:var(--accent2)}
+.expression{
+  text-align:center;
+  font-weight:800;
+  font-size:clamp(2.4rem,7vw,5.2rem);
+  letter-spacing:.02em;
+  margin:24px 0 28px;
+}
+.prompt{text-align:center;font-size:clamp(1.2rem,2.7vw,1.9rem);font-weight:700;margin:14px 0 24px}
+.input-wrap{display:flex;justify-content:center;margin-top:10px}
+input[type=number]{
+  min-width:220px;
+  min-height:54px;
+  font-size:1.5rem;
+  padding:8px 12px;
+  border:2px solid var(--border);
+  border-radius:12px;
+  text-align:center;
+}
+.choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:760px;margin:0 auto 20px}
+.choice{
+  min-height:72px;
+  border:2px solid var(--border);
+  border-radius:14px;
+  background:#fff;
+  font-size:2rem;
+  font-weight:800;
+  cursor:pointer;
+  padding:10px;
+}
+.choice.selected{border-color:var(--accent);background:var(--soft);color:var(--accent)}
+.controls{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:20px}
+button.primary,button.secondary{
+  min-height:48px;
+  border-radius:12px;
+  padding:12px 20px;
+  font-size:1rem;
+  font-weight:700;
+  cursor:pointer;
+}
+button.primary{border:none;background:var(--accent);color:#fff}
+button.secondary{border:2px solid var(--border);background:#fff;color:var(--text)}
+.feedback{margin-top:22px;border-radius:14px;padding:16px;background:#f8fafc;border:1px solid var(--border);line-height:1.55}
+.feedback.good{border-color:#bbf7d0;background:#f0fdf4}
+.feedback.bad{border-color:#fecaca;background:#fef2f2}
+.feedback h3{margin-top:0}
+.steps{display:grid;gap:8px;margin-top:12px}
+.step{padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:10px}
+.rulebox{margin-top:20px;border-top:1px solid var(--border);padding-top:18px}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.rule{padding:12px;border:1px solid var(--border);border-radius:10px;background:#fbfdff;line-height:1.5}
+.hidden{display:none}
+
+/* Zahlengerade */
+.numberline-scroll{overflow-x:auto;padding:8px 2px 12px}
+.numberline{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(var(--tick-count,21),minmax(34px,1fr));
+  min-width:760px;
+  padding:20px 12px 38px;
+  margin:12px auto 6px;
+}
+.numberline::before{
+  content:"";
+  position:absolute;
+  left:28px;
+  right:28px;
+  top:37px;
+  height:3px;
+  background:#334155;
+  border-radius:4px;
+}
+.tick{
+  position:relative;
+  height:68px;
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  padding:0;
+  z-index:1;
+}
+.tick::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:9px;
+  transform:translateX(-50%);
+  width:3px;
+  height:22px;
+  background:#334155;
+  border-radius:3px;
+}
+.tick::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:1px;
+  transform:translateX(-50%);
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:transparent;
+  border:3px solid transparent;
+}
+.tick:hover::after{border-color:#93c5fd;background:#eff6ff}
+.tick.selected::after{border-color:var(--accent);background:#dbeafe}
+.tick.correct::after{border-color:var(--good);background:#dcfce7}
+.tick.wrong::after{border-color:var(--bad);background:#fee2e2}
+.tick-label{
+  position:absolute;
+  left:50%;
+  bottom:0;
+  transform:translateX(-50%);
+  font-size:.88rem;
+  font-weight:700;
+  color:#475569;
+  white-space:nowrap;
+}
+.numberline-hint{text-align:center;color:var(--muted);font-size:.95rem;margin-top:4px}
+
+@media(max-width:850px){.tabs{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){
+  main{padding:12px}
+  .tabs{grid-template-columns:1fr}
+  .choices{grid-template-columns:1fr}
+  .rules{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main>
+<h1>Rechnen mit ganzen Zahlen</h1>
+<div class="subtitle">Positive und negative Zahlen sicher rechnen, vergleichen und auf der Zahlengeraden einordnen</div>
+
+<div class="tabs">
+  <button class="tab active" data-mode="1">1 · Addition &amp; Subtraktion</button>
+  <button class="tab" data-mode="2">2 · Multiplikation &amp; Division</button>
+  <button class="tab" data-mode="3">3 · Zahlen vergleichen</button>
+  <button class="tab" data-mode="4">4 · Zahlengerade</button>
+</div>
+
+<section class="panel" id="mode1">
+  <div class="topline">
+    <div><strong>Berechne das Ergebnis.</strong></div>
+    <div class="score" id="score1">Punkte: 0 / 0</div>
+  </div>
+  <div class="expression" id="expr1"></div>
+  <div class="input-wrap"><input type="number" id="answer1" step="1" placeholder="Ergebnis"></div>
+  <div class="controls">
+    <button class="primary" id="check1">Prüfen</button>
+    <button class="secondary" id="new1">Neue Aufgabe</button>
+  </div>
+  <div class="feedback hidden" id="feedback1" aria-live="polite"></div>
+</section>
+
+<section class="panel hidden" id="mode2">
+  <div class="topline">
+    <div><strong>Berechne das Ergebnis.</strong></div>
+    <div class="score" id="score2">Punkte: 0 / 0</div>
+  </div>
+  <div class="expression" id="expr2"></div>
+  <div class="input-wrap"><input type="number" id="answer2" step="1" placeholder="Ergebnis"></div>
+  <div class="controls">
+    <button class="primary" id="check2">Prüfen</button>
+    <button class="secondary" id="new2">Neue Aufgabe</button>
+  </div>
+  <div class="feedback hidden" id="feedback2" aria-live="polite"></div>
+</section>
+
+<section class="panel hidden" id="mode3">
+  <div class="topline">
+    <div><strong>Welches Zeichen gehört zwischen die beiden Zahlen?</strong></div>
+    <div class="score" id="score3">Punkte: 0 / 0</div>
+  </div>
+  <div class="expression" id="expr3"></div>
+  <div class="choices" id="choices3">
+    <button class="choice" data-choice="lt">&lt;</button>
+    <button class="choice" data-choice="eq">=</button>
+    <button class="choice" data-choice="gt">&gt;</button>
+  </div>
+  <div class="controls">
+    <button class="primary" id="check3">Prüfen</button>
+    <button class="secondary" id="new3">Neue Aufgabe</button>
+  </div>
+  <div class="feedback hidden" id="feedback3" aria-live="polite"></div>
+</section>
+
+<section class="panel hidden" id="mode4">
+  <div class="topline">
+    <div><strong>Klicke die gesuchte Zahl auf der Zahlengeraden an.</strong></div>
+    <div class="score" id="score4">Punkte: 0 / 0</div>
+  </div>
+  <div class="prompt" id="prompt4"></div>
+  <div class="numberline-scroll">
+    <div class="numberline" id="numberline"></div>
+  </div>
+  <div class="numberline-hint">Nicht jede Zahl ist beschriftet. Achte zuerst darauf, wie viel ein Strich bedeutet.</div>
+  <div class="controls">
+    <button class="primary" id="check4">Prüfen</button>
+    <button class="secondary" id="new4">Neue Aufgabe</button>
+  </div>
+  <div class="feedback hidden" id="feedback4" aria-live="polite"></div>
+</section>
+
+<section class="panel rulebox">
+  <strong>Merke:</strong>
+  <div class="rules">
+    <div class="rule"><b>Addieren und Subtrahieren</b><br>Beim Subtrahieren kannst du die Gegenzahl addieren: <b>5 − (−3) = 5 + 3</b>. Bei unterschiedlichen Vorzeichen hilft der Abstand zur 0.</div>
+    <div class="rule"><b>Multiplizieren und Dividieren</b><br>Gleiche Vorzeichen ergeben <b>Plus</b>, unterschiedliche Vorzeichen ergeben <b>Minus</b>.</div>
+    <div class="rule"><b>Zahlen vergleichen</b><br>Auf der Zahlengeraden ist die Zahl weiter <b>rechts größer</b>. Bei negativen Zahlen ist deshalb zum Beispiel <b>−3 &gt; −8</b>.</div>
+    <div class="rule"><b>Zahlengerade</b><br>Nach rechts werden die Zahlen größer, nach links kleiner. <b>Achte auf die Skalierung:</b> Ein Strich kann zum Beispiel 1, 2, 5 oder 10 bedeuten.</div>
+  </div>
+</section>
+</main>
+
+<script>
+(() => {
+  const state = {
+    m1:{correct:0,total:0,task:null,seen:new Set(),answered:false},
+    m2:{correct:0,total:0,task:null,seen:new Set(),answered:false},
+    m3:{correct:0,total:0,task:null,choice:null,seen:new Set(),answered:false},
+    m4:{correct:0,total:0,task:null,choice:null,seen:new Set(),answered:false}
+  };
+
+  const rint = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+
+  function updateScore(mode){
+    const s=state["m"+mode];
+    document.getElementById("score"+mode).textContent=`Punkte: ${s.correct} / ${s.total}`;
+  }
+
+  function remember(mode,key){
+    const set=state["m"+mode].seen;
+    if(set.size>45){
+      const first=set.values().next().value;
+      set.delete(first);
+    }
+    set.add(key);
+  }
+
+  function fresh(mode,maker){
+    for(let i=0;i<100;i++){
+      const t=maker();
+      if(!state["m"+mode].seen.has(t.key)){
+        remember(mode,t.key);
+        return t;
+      }
+    }
+    const t=maker();
+    remember(mode,t.key);
+    return t;
+  }
+
+  function fmt(n){
+    return n<0 ? `(${n})` : String(n);
+  }
+
+  function signWord(n){
+    if(n<0) return "negativ";
+    if(n>0) return "positiv";
+    return "0";
+  }
+
+  // ------------------------------------------------------------
+  // 1. Addition und Subtraktion
+  // ------------------------------------------------------------
+  function makeMode1Task(){
+    const type=rint(1,8);
+    let a,b,expr,result,explain;
+
+    if(type===1){
+      a=rint(2,15); b=rint(2,15);
+      expr=`${a} + ${b}`; result=a+b;
+      explain=`Beide Zahlen sind positiv. Du addierst ${a} + ${b} = ${result}.`;
+    } else if(type===2){
+      a=-rint(2,15); b=-rint(2,15);
+      expr=`${a} + ${fmt(b)}`; result=a+b;
+      explain=`Beide Zahlen sind negativ. Addiere die Beträge und behalte das Minus: ${Math.abs(a)} + ${Math.abs(b)} = ${Math.abs(result)}, also ${result}.`;
+    } else if(type===3){
+      a=rint(2,15); b=-rint(2,15);
+      expr=`${a} + ${fmt(b)}`; result=a+b;
+      explain=result===0
+        ? `Die Zahlen haben den gleichen Betrag und verschiedene Vorzeichen. Sie heben sich auf: ${a} + (${b}) = 0.`
+        : `Die Vorzeichen sind verschieden. Vergleiche die Beträge ${a} und ${Math.abs(b)}: Die Differenz ist ${Math.abs(a-Math.abs(b))}. Das Vorzeichen kommt von der Zahl mit dem größeren Betrag. Ergebnis: ${result}.`;
+    } else if(type===4){
+      a=-rint(2,15); b=rint(2,15);
+      expr=`${a} + ${b}`; result=a+b;
+      explain=result===0
+        ? `Die Zahlen haben den gleichen Betrag und verschiedene Vorzeichen. Sie heben sich auf: ${a} + ${b} = 0.`
+        : `Die Vorzeichen sind verschieden. Vergleiche die Beträge ${Math.abs(a)} und ${b}. Die Differenz ist ${Math.abs(Math.abs(a)-b)}. Das Vorzeichen kommt von der Zahl mit dem größeren Betrag. Ergebnis: ${result}.`;
+    } else if(type===5){
+      a=rint(2,15); b=rint(2,15);
+      expr=`${a} - ${b}`; result=a-b;
+      explain=`Subtrahiere ${b} von ${a}. Auf der Zahlengeraden gehst du ${b} Schritte nach links. Ergebnis: ${result}.`;
+    } else if(type===6){
+      a=-rint(2,15); b=rint(2,15);
+      expr=`${a} - ${b}`; result=a-b;
+      explain=`Von ${a} aus gehst du beim Subtrahieren von ${b} noch weiter nach links. Ergebnis: ${result}.`;
+    } else if(type===7){
+      a=rint(2,15); b=-rint(2,15);
+      expr=`${a} - ${fmt(b)}`; result=a-b;
+      explain=`Minus einer negativen Zahl wird zu Plus: ${a} - (${b}) = ${a} + ${Math.abs(b)} = ${result}.`;
+    } else {
+      a=-rint(2,15); b=-rint(2,15);
+      expr=`${a} - ${fmt(b)}`; result=a-b;
+      explain=`Minus einer negativen Zahl wird zu Plus: ${a} - (${b}) = ${a} + ${Math.abs(b)} = ${result}.`;
+    }
+
+    return {key:`${expr}|${result}`,expr,result,explain};
+  }
+
+  function newMode1(){
+    state.m1.task=fresh(1,makeMode1Task);
+    state.m1.answered=false;
+    document.getElementById("expr1").textContent=state.m1.task.expr;
+    document.getElementById("answer1").value="";
+    const fb=document.getElementById("feedback1");
+    fb.className="feedback hidden";
+    fb.innerHTML="";
+  }
+
+  function checkNumberAnswer(mode){
+    const stateMode=state["m"+mode];
+    const raw=document.getElementById("answer"+mode).value;
+    const fb=document.getElementById("feedback"+mode);
+    if(raw===""){
+      fb.className="feedback bad";
+      fb.textContent="Bitte zuerst ein Ergebnis eingeben.";
+      return;
+    }
+    const n=Number(raw);
+    if(!Number.isFinite(n)){
+      fb.className="feedback bad";
+      fb.textContent="Bitte eine gültige Zahl eingeben.";
+      return;
+    }
+
+    const ok=n===stateMode.task.result;
+    if(!stateMode.answered){
+      stateMode.total++;
+      if(ok) stateMode.correct++;
+      updateScore(mode);
+      stateMode.answered=true;
+    }
+
+    fb.className="feedback "+(ok?"good":"bad");
+    fb.innerHTML=`<h3>${ok?"Richtig!":"Das Ergebnis stimmt noch nicht."}</h3><p>${stateMode.task.explain}</p><p>Richtiges Ergebnis: <strong>${stateMode.task.result}</strong></p>`;
+  }
+
+  document.getElementById("check1").addEventListener("click",()=>checkNumberAnswer(1));
+  document.getElementById("new1").addEventListener("click",newMode1);
+  document.getElementById("answer1").addEventListener("keydown",e=>{
+    if(e.key==="Enter") document.getElementById("check1").click();
+  });
+
+  // ------------------------------------------------------------
+  // 2. Multiplikation und Division
+  // ------------------------------------------------------------
+  function makeMode2Task(){
+    const isDivision=Math.random()<0.5;
+    const negativeCount=rint(0,2); // 0 = beide positiv, 1 = verschieden, 2 = beide negativ
+    let a,b,expr,result,explain;
+
+    if(!isDivision){
+      const x=rint(2,12), y=rint(2,12);
+      if(negativeCount===0){a=x;b=y;}
+      else if(negativeCount===1){
+        if(Math.random()<0.5){a=-x;b=y;} else {a=x;b=-y;}
+      } else {a=-x;b=-y;}
+      result=a*b;
+      expr=`${a} · ${fmt(b)}`;
+      const same=(a<0)===(b<0);
+      explain=`Zuerst das Vorzeichen: ${same?"Gleiche":"Unterschiedliche"} Vorzeichen ergeben ${same?"Plus":"Minus"}. Dann ${Math.abs(a)} · ${Math.abs(b)} = ${Math.abs(result)}. Ergebnis: ${result}.`;
+    } else {
+      const divisor=rint(2,12), quotient=rint(2,12);
+      let q=quotient, d=divisor;
+      if(negativeCount===0){q=quotient;d=divisor;}
+      else if(negativeCount===1){
+        if(Math.random()<0.5){q=-quotient;d=divisor;} else {q=quotient;d=-divisor;}
+      } else {q=-quotient;d=-divisor;}
+      a=q*d;
+      b=d;
+      result=q;
+      expr=`${a} : ${fmt(b)}`;
+      const same=(a<0)===(b<0);
+      explain=`Zuerst das Vorzeichen: ${same?"Gleiche":"Unterschiedliche"} Vorzeichen ergeben ${same?"Plus":"Minus"}. Dann ${Math.abs(a)} : ${Math.abs(b)} = ${Math.abs(result)}. Ergebnis: ${result}.`;
+    }
+
+    return {key:`${expr}|${result}`,expr,result,explain};
+  }
+
+  function newMode2(){
+    state.m2.task=fresh(2,makeMode2Task);
+    state.m2.answered=false;
+    document.getElementById("expr2").textContent=state.m2.task.expr;
+    document.getElementById("answer2").value="";
+    const fb=document.getElementById("feedback2");
+    fb.className="feedback hidden";
+    fb.innerHTML="";
+  }
+
+  document.getElementById("check2").addEventListener("click",()=>checkNumberAnswer(2));
+  document.getElementById("new2").addEventListener("click",newMode2);
+  document.getElementById("answer2").addEventListener("keydown",e=>{
+    if(e.key==="Enter") document.getElementById("check2").click();
+  });
+
+  // ------------------------------------------------------------
+  // 3. Ganze Zahlen vergleichen
+  // ------------------------------------------------------------
+  function makeMode3Task(){
+    const type=rint(1,6);
+    let a,b;
+
+    if(type===1){
+      // Zwei negative Zahlen: typische Stolperstelle.
+      a=-rint(1,20); b=-rint(1,20);
+      while(a===b) b=-rint(1,20);
+    } else if(type===2){
+      a=-rint(1,20); b=rint(0,20);
+    } else if(type===3){
+      a=rint(0,20); b=-rint(1,20);
+    } else if(type===4){
+      a=rint(-20,20); b=a;
+    } else {
+      a=rint(-20,20); b=rint(-20,20);
+      while(a===b) b=rint(-20,20);
+    }
+
+    const relation=a<b?"lt":a>b?"gt":"eq";
+    const symbol=relation==="lt"?"<":relation==="gt"?">":"=";
+    let explain;
+
+    if(a<0 && b<0 && a!==b){
+      const greater=Math.max(a,b);
+      explain=`Bei zwei negativen Zahlen ist die Zahl näher an 0 größer. ${greater} liegt weiter rechts auf der Zahlengeraden. Deshalb gilt: ${a} ${symbol} ${b}.`;
+    } else if((a<0 && b>=0)||(b<0 && a>=0)){
+      explain=`Jede negative Zahl ist kleiner als 0. Die 0 und positive Zahlen liegen weiter rechts. Deshalb gilt: ${a} ${symbol} ${b}.`;
+    } else if(a===b){
+      explain=`Beide Zahlen sind gleich. Deshalb gehört das Gleichheitszeichen dazwischen: ${a} = ${b}.`;
+    } else {
+      explain=`Die größere Zahl liegt auf der Zahlengeraden weiter rechts. Deshalb gilt: ${a} ${symbol} ${b}.`;
+    }
+
+    return {key:`${a}|${b}|${relation}`,a,b,relation,symbol,explain};
+  }
+
+  function newMode3(){
+    state.m3.task=fresh(3,makeMode3Task);
+    state.m3.choice=null;
+    state.m3.answered=false;
+    document.getElementById("expr3").textContent=`${state.m3.task.a}   ?   ${state.m3.task.b}`;
+    document.querySelectorAll("#choices3 .choice").forEach(b=>b.classList.remove("selected"));
+    const fb=document.getElementById("feedback3");
+    fb.className="feedback hidden";
+    fb.innerHTML="";
+  }
+
+  document.querySelectorAll("#choices3 .choice").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      state.m3.choice=btn.dataset.choice;
+      document.querySelectorAll("#choices3 .choice").forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+    });
+  });
+
+  document.getElementById("check3").addEventListener("click",()=>{
+    const fb=document.getElementById("feedback3");
+    if(state.m3.choice===null){
+      fb.className="feedback bad";
+      fb.textContent="Bitte zuerst <, = oder > auswählen.";
+      return;
+    }
+    const ok=state.m3.choice===state.m3.task.relation;
+    if(!state.m3.answered){
+      state.m3.total++;
+      if(ok) state.m3.correct++;
+      updateScore(3);
+      state.m3.answered=true;
+    }
+    fb.className="feedback "+(ok?"good":"bad");
+    fb.innerHTML=`<h3>${ok?"Richtig!":"Noch nicht ganz."}</h3><p>${state.m3.task.explain}</p>`;
+  });
+  document.getElementById("new3").addEventListener("click",newMode3);
+
+  // ------------------------------------------------------------
+  // 4. Ganze Zahlen auf der Zahlengeraden einordnen
+  // ------------------------------------------------------------
+  const numberlineSteps=[1,2,5,10];
+
+  function makeMode4Task(){
+    const step=pick(numberlineSteps);
+
+    // Immer 21 Striche (= 20 Abstände), aber mit wechselnder Skalierung.
+    // Der Startwert liegt auf dem jeweiligen Raster und wird so gewählt,
+    // dass negative Zahlen häufig vorkommen.
+    const startUnits=pick([-10,-9,-8,-7,-6,-5,-4,-3,-2,0]);
+    const min=startUnits*step;
+    const max=min+20*step;
+
+    // Ziel nie auf einen Endpunkt legen. Negative Werte werden bewusst
+    // häufiger gewählt, damit z. B. -35 bei 5er- oder -18 bei 2er-Skala vorkommen.
+    let targetIndex;
+    const negativeIndices=[];
+    for(let i=1;i<20;i++){
+      if(min+i*step<0) negativeIndices.push(i);
+    }
+    if(negativeIndices.length && Math.random()<0.65){
+      targetIndex=pick(negativeIndices);
+    }else{
+      targetIndex=rint(1,19);
+    }
+    const target=min+targetIndex*step;
+
+    return {key:`${min}|${max}|${step}|${target}`,min,max,step,target};
+  }
+
+  function shouldLabel(n,index,t){
+    // Alle fünf Abstände beschriften; 0 zusätzlich, falls vorhanden.
+    // So müssen die SuS die Schrittweite aus der Beschriftung erschließen.
+    return index===0 || index===20 || index%5===0 || n===0;
+  }
+
+  function renderNumberline(){
+    const t=state.m4.task;
+    const line=document.getElementById("numberline");
+    line.innerHTML="";
+
+    const tickCount=Math.round((t.max-t.min)/t.step)+1;
+    line.style.setProperty("--tick-count",tickCount);
+
+    for(let i=0;i<tickCount;i++){
+      const n=t.min+i*t.step;
+      const btn=document.createElement("button");
+      btn.className="tick";
+      btn.type="button";
+      btn.dataset.value=String(n);
+      btn.setAttribute("aria-label",`Zahl ${n}`);
+      if(shouldLabel(n,i,t)){
+        const label=document.createElement("span");
+        label.className="tick-label";
+        label.textContent=String(n);
+        btn.appendChild(label);
+      }
+      btn.addEventListener("click",()=>{
+        state.m4.choice=n;
+        line.querySelectorAll(".tick").forEach(x=>x.classList.remove("selected","wrong","correct"));
+        btn.classList.add("selected");
+      });
+      line.appendChild(btn);
+    }
+  }
+
+  function newMode4(){
+    state.m4.task=fresh(4,makeMode4Task);
+    state.m4.choice=null;
+    state.m4.answered=false;
+    document.getElementById("prompt4").textContent=`Wo liegt die Zahl ${state.m4.task.target}?`;
+    renderNumberline();
+    const fb=document.getElementById("feedback4");
+    fb.className="feedback hidden";
+    fb.innerHTML="";
+  }
+
+  document.getElementById("check4").addEventListener("click",()=>{
+    const fb=document.getElementById("feedback4");
+    if(state.m4.choice===null){
+      fb.className="feedback bad";
+      fb.textContent="Bitte zuerst eine Stelle auf der Zahlengeraden anklicken.";
+      return;
+    }
+
+    const ok=state.m4.choice===state.m4.task.target;
+    if(!state.m4.answered){
+      state.m4.total++;
+      if(ok) state.m4.correct++;
+      updateScore(4);
+      state.m4.answered=true;
+    }
+
+    const line=document.getElementById("numberline");
+    line.querySelectorAll(".tick").forEach(x=>x.classList.remove("wrong","correct"));
+    const chosen=line.querySelector(`.tick[data-value="${state.m4.choice}"]`);
+    const correct=line.querySelector(`.tick[data-value="${state.m4.task.target}"]`);
+    if(chosen && !ok) chosen.classList.add("wrong");
+    if(correct) correct.classList.add("correct");
+
+    fb.className="feedback "+(ok?"good":"bad");
+    if(ok){
+      fb.innerHTML=`<h3>Richtig!</h3><p>${state.m4.task.target} liegt genau an dieser Stelle. Hier bedeutet ein Abstand zwischen zwei Strichen <b>${state.m4.task.step}</b>.</p>`;
+    } else {
+      const direction=state.m4.choice<state.m4.task.target?"weiter rechts":"weiter links";
+      const tickDistance=Math.abs(state.m4.choice-state.m4.task.target)/state.m4.task.step;
+      fb.innerHTML=`<h3>Noch nicht ganz.</h3><p>Du hast ${state.m4.choice} gewählt. Ein Abstand zwischen zwei Strichen bedeutet hier <b>${state.m4.task.step}</b>. Die gesuchte Zahl ${state.m4.task.target} liegt ${tickDistance} Strich${tickDistance===1?"":"e"} ${direction}. Die richtige Stelle ist grün markiert.</p>`;
+    }
+  });
+  document.getElementById("new4").addEventListener("click",newMode4);
+
+  // ------------------------------------------------------------
+  // Tabs
+  // ------------------------------------------------------------
+  document.querySelectorAll(".tab").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      ["mode1","mode2","mode3","mode4"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+      document.getElementById("mode"+btn.dataset.mode).classList.remove("hidden");
+    });
+  });
+
+  newMode1();
+  newMode2();
+  newMode3();
+  newMode4();
+})();
+</script>
+</body>
+</html>
